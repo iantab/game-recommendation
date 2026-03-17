@@ -41,12 +41,16 @@ game-recommendation/
 docker compose up -d
 ```
 
-### Set environment variables
+### Set IGDB credentials
 
-```sh
-export IGDB_CLIENT_ID=your_client_id
-export IGDB_CLIENT_SECRET=your_client_secret
+Fill in your credentials in the `.env` file at the project root (already gitignored):
+
 ```
+IGDB_CLIENT_ID=your_client_id
+IGDB_CLIENT_SECRET=your_client_secret
+```
+
+The `bootRun` Gradle task loads this file automatically — no need to export or source anything.
 
 ### Run the backend
 

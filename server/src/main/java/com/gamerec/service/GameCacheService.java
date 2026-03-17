@@ -27,6 +27,8 @@ public class GameCacheService {
     private final GenreRepository genreRepo;
     private final ThemeRepository themeRepo;
     private final PlatformRepository platformRepo;
+    private final GameModeRepository gameModeRepo;
+    private final PlayerPerspectiveRepository perspectiveRepo;
     private final ObjectMapper objectMapper;
 
     @Value("${game-cache.ttl-days:7}")
@@ -34,12 +36,15 @@ public class GameCacheService {
 
     public GameCacheService(IgdbClientService igdbClient, CachedGameRepository gameRepo,
                             GenreRepository genreRepo, ThemeRepository themeRepo,
-                            PlatformRepository platformRepo, ObjectMapper objectMapper) {
+                            PlatformRepository platformRepo, GameModeRepository gameModeRepo,
+                            PlayerPerspectiveRepository perspectiveRepo, ObjectMapper objectMapper) {
         this.igdbClient = igdbClient;
         this.gameRepo = gameRepo;
         this.genreRepo = genreRepo;
         this.themeRepo = themeRepo;
         this.platformRepo = platformRepo;
+        this.gameModeRepo = gameModeRepo;
+        this.perspectiveRepo = perspectiveRepo;
         this.objectMapper = objectMapper;
     }
 
@@ -70,6 +75,88 @@ public class GameCacheService {
         return gameRepo.findByCachedAtAfter(LocalDateTime.now().minusDays(ttlDays));
     }
 
+    public List<CachedGame> fetchAndCacheByGenresAndThemes(List<Integer> genreIds, List<Integer> themeIds, int limit) {
+        List<IgdbGame> games = igdbClient.getGamesByGenresAndThemes(genreIds, themeIds, limit);
+        games.forEach(this::cacheGame);
+        return games.stream()
+                .map(g -> gameRepo.findById(g.id()).orElse(null))
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    /**
+     * Ensures liked games are cached and fetches their similar games.
+     * Returns the list of similar games as CachedGame objects.
+     */
+    public List<CachedGame> fetchSimilarGamesForLiked(List<Long> likedGameIds) {
+        if (likedGameIds == null || likedGameIds.isEmpty()) return List.of();
+
+        // Ensure liked games are in cache
+        List<Long> uncachedIds = likedGameIds.stream()
+                .filter(id -> gameRepo.findById(id).map(this::isExpired).orElse(true))
+                .toList();
+        if (!uncachedIds.isEmpty()) {
+            igdbClient.getGamesByIds(uncachedIds).forEach(this::cacheGame);
+        }
+
+        // Collect similar game IDs from liked games
+        Set<Long> similarIds = new LinkedHashSet<>();
+        for (Long likedId : likedGameIds) {
+            gameRepo.findById(likedId).ifPresent(game -> {
+                if (game.getSimilarGameIds() != null) {
+                    for (Long simId : game.getSimilarGameIds()) {
+                        if (!likedGameIds.contains(simId)) {
+                            similarIds.add(simId);
+                        }
+                    }
+                }
+            });
+        }
+
+        if (similarIds.isEmpty()) return List.of();
+
+        // Fetch uncached similar games
+        List<Long> uncachedSimilar = similarIds.stream()
+                .filter(id -> gameRepo.findById(id).map(this::isExpired).orElse(true))
+                .toList();
+        if (!uncachedSimilar.isEmpty()) {
+            // Batch in groups of 50 (IGDB limit)
+            for (int i = 0; i < uncachedSimilar.size(); i += 50) {
+                List<Long> batch = uncachedSimilar.subList(i, Math.min(i + 50, uncachedSimilar.size()));
+                igdbClient.getGamesByIds(batch).forEach(this::cacheGame);
+            }
+        }
+
+        return similarIds.stream()
+                .map(gameRepo::findById)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .toList();
+    }
+
+    /**
+     * Returns cached versions of the given game IDs, fetching from IGDB if needed.
+     */
+    public List<CachedGame> ensureCached(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) return List.of();
+
+        List<Long> uncached = ids.stream()
+                .filter(id -> gameRepo.findById(id).map(this::isExpired).orElse(true))
+                .toList();
+        if (!uncached.isEmpty()) {
+            for (int i = 0; i < uncached.size(); i += 50) {
+                List<Long> batch = uncached.subList(i, Math.min(i + 50, uncached.size()));
+                igdbClient.getGamesByIds(batch).forEach(this::cacheGame);
+            }
+        }
+
+        return ids.stream()
+                .map(gameRepo::findById)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .toList();
+    }
+
     public void loadReferenceData() {
         if (genreRepo.count() == 0) {
             log.info("Loading genres from IGDB");
@@ -85,6 +172,16 @@ public class GameCacheService {
             log.info("Loading platforms from IGDB");
             List<IgdbRef> platforms = igdbClient.getPlatforms();
             platforms.forEach(p -> platformRepo.save(new Platform(p.id(), p.name(), p.slug(), p.category())));
+        }
+        if (gameModeRepo.count() == 0) {
+            log.info("Loading game modes from IGDB");
+            List<IgdbRef> modes = igdbClient.getGameModes();
+            modes.forEach(m -> gameModeRepo.save(new GameMode(m.id(), m.name(), m.slug())));
+        }
+        if (perspectiveRepo.count() == 0) {
+            log.info("Loading player perspectives from IGDB");
+            List<IgdbRef> perspectives = igdbClient.getPlayerPerspectives();
+            perspectives.forEach(p -> perspectiveRepo.save(new PlayerPerspective(p.id(), p.name(), p.slug())));
         }
     }
 
@@ -136,12 +233,35 @@ public class GameCacheService {
             cached.setGenreIds(toIdArray(game.genres()));
             cached.setThemeIds(toIdArray(game.themes()));
             cached.setPlatformIds(toIdArray(game.platforms()));
+            cached.setSimilarGameIds(game.similarGames() != null
+                    ? game.similarGames().toArray(Long[]::new) : new Long[0]);
+            cached.setKeywordIds(toIdArray(game.keywords()));
+            cached.setGameModeIds(toIdArray(game.gameModes()));
+            cached.setPerspectiveIds(toIdArray(game.playerPerspectives()));
+            cached.setDeveloperSlugs(extractDeveloperSlugs(game));
+            cached.setFranchiseIds(extractFranchiseIds(game));
             cached.setRawJson(objectMapper.writeValueAsString(game));
             cached.setCachedAt(LocalDateTime.now());
             gameRepo.save(cached);
         } catch (Exception e) {
-            log.warn("Failed to cache game {}: {}", game.id(), e.getMessage());
+            log.error("Failed to cache game {}: {}", game.id(), e.getMessage(), e);
         }
+    }
+
+    private String[] extractDeveloperSlugs(IgdbGame game) {
+        if (game.involvedCompanies() == null) return new String[0];
+        return game.involvedCompanies().stream()
+                .filter(ic -> ic.developer() && ic.company() != null)
+                .map(ic -> ic.company().slug())
+                .filter(Objects::nonNull)
+                .toArray(String[]::new);
+    }
+
+    private Long[] extractFranchiseIds(IgdbGame game) {
+        if (game.franchises() == null) return new Long[0];
+        return game.franchises().stream()
+                .map(f -> (long) f.id())
+                .toArray(Long[]::new);
     }
 
     private GameDto toDto(IgdbGame game) {

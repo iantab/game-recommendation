@@ -22,7 +22,14 @@ public class IgdbClientService {
     private static final String GAME_FIELDS =
             "fields name, summary, rating, rating_count, first_release_date, "
             + "cover.image_id, genres.name, genres.slug, themes.name, themes.slug, "
-            + "platforms.name, platforms.slug, platforms.category;";
+            + "platforms.name, platforms.slug, platforms.category, "
+            + "similar_games, "
+            + "game_modes.name, game_modes.slug, "
+            + "player_perspectives.name, player_perspectives.slug, "
+            + "keywords.name, keywords.slug, "
+            + "involved_companies.company.name, involved_companies.company.slug, "
+            + "involved_companies.developer, involved_companies.publisher, "
+            + "franchises.name, franchises.slug;";
 
     private final IgdbConfig config;
     private final IgdbTokenManager tokenManager;
@@ -65,6 +72,22 @@ public class IgdbClientService {
         return queryGames(body);
     }
 
+    public List<IgdbGame> getGamesByGenresAndThemes(List<Integer> genreIds, List<Integer> themeIds, int limit) {
+        if ((genreIds == null || genreIds.isEmpty()) && (themeIds == null || themeIds.isEmpty())) return List.of();
+        StringBuilder where = new StringBuilder();
+        if (genreIds != null && !genreIds.isEmpty()) {
+            where.append("genres = (").append(genreIds.stream().map(String::valueOf).collect(Collectors.joining(","))).append(")");
+        }
+        if (themeIds != null && !themeIds.isEmpty()) {
+            if (!where.isEmpty()) where.append(" & ");
+            where.append("themes = (").append(themeIds.stream().map(String::valueOf).collect(Collectors.joining(","))).append(")");
+        }
+        String body = GAME_FIELDS
+                + " where " + where + " & rating > 65 & rating_count > 10;"
+                + " sort rating desc; limit " + clampLimit(limit) + ";";
+        return queryGames(body);
+    }
+
     public List<IgdbRef> getGenres() {
         return queryRefs("/genres", "fields name, slug; limit 500;");
     }
@@ -75,6 +98,14 @@ public class IgdbClientService {
 
     public List<IgdbRef> getPlatforms() {
         return queryRefs("/platforms", "fields name, slug, category; limit 500;");
+    }
+
+    public List<IgdbRef> getGameModes() {
+        return queryRefs("/game_modes", "fields name, slug; limit 500;");
+    }
+
+    public List<IgdbRef> getPlayerPerspectives() {
+        return queryRefs("/player_perspectives", "fields name, slug; limit 500;");
     }
 
     private List<IgdbGame> queryGames(String apicalypse) {

@@ -16,9 +16,23 @@ public record IgdbGame(
         Cover cover,
         List<IgdbRef> genres,
         List<IgdbRef> themes,
-        List<IgdbRef> platforms
+        List<IgdbRef> platforms,
+        @JsonProperty("similar_games") List<Long> similarGames,
+        @JsonProperty("game_modes") List<IgdbRef> gameModes,
+        @JsonProperty("player_perspectives") List<IgdbRef> playerPerspectives,
+        List<IgdbRef> keywords,
+        @JsonProperty("involved_companies") List<InvolvedCompany> involvedCompanies,
+        List<IgdbRef> franchises
 ) {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Cover(Long id, @JsonProperty("image_id") String imageId) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record InvolvedCompany(
+            IgdbRef company,
+            boolean developer,
+            boolean publisher
+    ) {
     }
 }

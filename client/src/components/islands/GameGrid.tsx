@@ -20,7 +20,7 @@ export default function GameGrid() {
       <p class="section__subtitle">{games.length} games matched your preferences</p>
       <div class="game-grid">
         {games.map((game) => (
-          <a class="game-card" href={`/game?id=${game.igdbId}`} key={game.igdbId}>
+          <div class="game-card" key={game.igdbId}>
             {game.coverUrl ? (
               <img class="game-card__cover" src={game.coverUrl} alt={game.name} loading="lazy" />
             ) : (
@@ -49,7 +49,7 @@ export default function GameGrid() {
                 )}
               </div>
             </div>
-          </a>
+          </div>
         ))}
       </div>
     </div>
