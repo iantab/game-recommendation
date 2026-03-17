@@ -1,0 +1,36 @@
+# Java
+*.class
+*.jar
+*.war
+build/
+!**/gradle-wrapper.jar
+
+# Gradle
+.gradle/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.project
+.classpath
+.settings/
+
+# Node / Bun
+node_modules/
+dist/
+.astro/
+
+# Environment
+.env
+.env.local
+
+# Docker
+docker-data/
+
+# AWS SAM
+.aws-sam/
+
+# OS
+.DS_Store
+Thumbs.db
