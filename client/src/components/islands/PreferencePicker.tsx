@@ -1,7 +1,12 @@
 import { useState, useEffect } from 'preact/hooks';
 import type { GenreDto, ThemeDto, PlatformDto } from '../../lib/types';
 import { getGenres, getThemes, getPlatforms, getRecommendations } from '../../lib/api';
-import { getLikedGames, removeLikedGame, onLikedGamesChange, offLikedGamesChange } from '../../lib/likedGames';
+import {
+  getLikedGames,
+  removeLikedGame,
+  onLikedGamesChange,
+  offLikedGamesChange,
+} from '../../lib/likedGames';
 import type { LikedGame } from '../../lib/likedGames';
 
 export default function PreferencePicker() {
@@ -66,15 +71,11 @@ export default function PreferencePicker() {
     <div>
       {likedGames.length > 0 && (
         <div class="picker__section">
-          <label class="picker__label">
-            Liked games ({likedGames.length})
-          </label>
+          <label class="picker__label">Liked games ({likedGames.length})</label>
           <div class="liked-games">
             {likedGames.map((game) => (
               <div class="liked-games__chip" key={game.igdbId}>
-                {game.coverUrl && (
-                  <img class="liked-games__cover" src={game.coverUrl} alt="" />
-                )}
+                {game.coverUrl && <img class="liked-games__cover" src={game.coverUrl} alt="" />}
                 <span class="liked-games__name">{game.name}</span>
                 <button
                   class="liked-games__remove"
@@ -90,9 +91,7 @@ export default function PreferencePicker() {
       )}
 
       <div class="picker__section">
-        <label class="picker__label">
-          Genres you enjoy ({selectedGenres.size} selected)
-        </label>
+        <label class="picker__label">Genres you enjoy ({selectedGenres.size} selected)</label>
         <div class="tags">
           {genres.map((g) => (
             <button
@@ -107,9 +106,7 @@ export default function PreferencePicker() {
       </div>
 
       <div class="picker__section">
-        <label class="picker__label">
-          Themes you like ({selectedThemes.size} selected)
-        </label>
+        <label class="picker__label">Themes you like ({selectedThemes.size} selected)</label>
         <div class="tags">
           {themes.map((t) => (
             <button
@@ -124,9 +121,7 @@ export default function PreferencePicker() {
       </div>
 
       <div class="picker__section">
-        <label class="picker__label">
-          Platforms you own ({selectedPlatforms.size} selected)
-        </label>
+        <label class="picker__label">Platforms you own ({selectedPlatforms.size} selected)</label>
         <div class="tags">
           {platforms
             .filter((p) => p.category != null && p.category <= 6)

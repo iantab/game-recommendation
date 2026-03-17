@@ -11,12 +11,12 @@ import org.springframework.context.annotation.Bean;
 @ConfigurationPropertiesScan
 public class GameRecApplication {
 
-    public static void main(String[] args) {
-        SpringApplication.run(GameRecApplication.class, args);
-    }
+  public static void main(String[] args) {
+    SpringApplication.run(GameRecApplication.class, args);
+  }
 
-    @Bean
-    ApplicationRunner loadReferenceData(GameCacheService cacheService) {
-        return args -> cacheService.loadReferenceData();
-    }
+  @Bean
+  ApplicationRunner loadReferenceData(GameCacheService cacheService) {
+    return args -> cacheService.loadReferenceData();
+  }
 }

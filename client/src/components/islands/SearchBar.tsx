@@ -1,7 +1,12 @@
 import { useState, useEffect, useRef } from 'preact/hooks';
 import type { GameDto } from '../../lib/types';
 import { searchGames } from '../../lib/api';
-import { isLiked, toggleLikedGame, onLikedGamesChange, offLikedGamesChange } from '../../lib/likedGames';
+import {
+  isLiked,
+  toggleLikedGame,
+  onLikedGamesChange,
+  offLikedGamesChange,
+} from '../../lib/likedGames';
 
 export default function SearchBar() {
   const [query, setQuery] = useState('');
@@ -68,13 +73,24 @@ export default function SearchBar() {
               <div class="game-card" key={game.igdbId}>
                 <div class="game-card__cover-wrap">
                   {game.coverUrl ? (
-                    <img class="game-card__cover" src={game.coverUrl} alt={game.name} loading="lazy" />
+                    <img
+                      class="game-card__cover"
+                      src={game.coverUrl}
+                      alt={game.name}
+                      loading="lazy"
+                    />
                   ) : (
                     <div class="game-card__cover--placeholder">?</div>
                   )}
                   <button
                     class={`game-card__like ${liked ? 'game-card__like--active' : ''}`}
-                    onClick={() => toggleLikedGame({ igdbId: game.igdbId, name: game.name, coverUrl: game.coverUrl })}
+                    onClick={() =>
+                      toggleLikedGame({
+                        igdbId: game.igdbId,
+                        name: game.name,
+                        coverUrl: game.coverUrl,
+                      })
+                    }
                     aria-label={liked ? `Unlike ${game.name}` : `Like ${game.name}`}
                   >
                     {liked ? '\u2665' : '\u2661'}

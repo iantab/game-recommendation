@@ -43,9 +43,7 @@ export default function GameGrid() {
                   </span>
                 )}
                 {game.score != null && (
-                  <span class="game-card__score">
-                    {(game.score * 100).toFixed(0)}% match
-                  </span>
+                  <span class="game-card__score">{(game.score * 100).toFixed(0)}% match</span>
                 )}
               </div>
             </div>
