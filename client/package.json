@@ -1,0 +1,14 @@
+{
+  "name": "gamerec-client",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@astrojs/preact": "^5.0.1",
+    "astro": "^6.0.0",
+    "preact": "^10.25.0"
+  }
+}

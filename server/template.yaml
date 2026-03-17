@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Game Recommendation API
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+
+Resources:
+  GameRecFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: java21
+      Handler: com.gamerec.StreamLambdaHandler::handleRequest
+      CodeUri: .
+      SnapStart:
+        ApplyOn: PublishedVersions
+      AutoPublishAlias: live
+      FunctionUrlConfig:
+        AuthType: NONE
+        Cors:
+          AllowOrigins:
+            - "*"
+          AllowMethods:
+            - GET
+            - POST
+            - OPTIONS
+          AllowHeaders:
+            - Content-Type
+      Environment:
+        Variables:
+          SPRING_PROFILES_ACTIVE: lambda
+          DB_URL: '{{resolve:ssm:/gamerec/db-url}}'
+          DB_USERNAME: '{{resolve:ssm:/gamerec/db-username}}'
+          DB_PASSWORD: '{{resolve:ssm:/gamerec/db-password}}'
+          IGDB_CLIENT_ID: '{{resolve:ssm:/gamerec/igdb-client-id}}'
+          IGDB_CLIENT_SECRET: '{{resolve:ssm:/gamerec/igdb-client-secret}}'
+
+Outputs:
+  GameRecApiUrl:
+    Description: Game Recommendation API URL
+    Value: !GetAtt GameRecFunctionUrl.FunctionUrl

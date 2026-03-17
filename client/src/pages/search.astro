@@ -1,0 +1,13 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SearchBar from '../components/islands/SearchBar';
+---
+
+<BaseLayout title="Search">
+  <div class="container">
+    <div class="page-header">
+      <h1 class="page-header__title">Search Games</h1>
+    </div>
+    <SearchBar client:load />
+  </div>
+</BaseLayout>

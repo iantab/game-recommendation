@@ -1,0 +1,16 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PreferencePicker from '../components/islands/PreferencePicker';
+import GameGrid from '../components/islands/GameGrid';
+---
+
+<BaseLayout title="Recommendations">
+  <div class="container">
+    <div class="page-header">
+      <h1 class="page-header__title">Get Recommendations</h1>
+      <p class="section__subtitle">Select your preferences and we'll find games you'll enjoy.</p>
+    </div>
+    <PreferencePicker client:load />
+    <GameGrid client:visible />
+  </div>
+</BaseLayout>
